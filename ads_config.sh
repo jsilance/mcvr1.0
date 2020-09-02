@@ -15,8 +15,3 @@ wget https://bootstrap.pypa.io/get-pip.py
 sudo python3 get-pip.py
 
 sudo pip install opencv-contrib-python==4.1.0.25
-
-
-sudo cp testgui.py /home/pi/Desktop/testgui.py
-cd /home/pi/Desktop
-python3.7 testgui.py
