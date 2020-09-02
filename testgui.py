@@ -107,14 +107,14 @@ def usb_select():
 	label_title.append(Label(frame, text="Select Disk", font=("arial", 25), bg=color, fg='#FFFFFF'))
 	label_title[0].place(rely=.0, relx=.1)
 	usb = get_usb_device()
-	if usb:
-		for device in usb:
-			select_bt.append(Button(frame, text=device, width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=stop_record))
-			select_bt[i].place(rely=((i + 1) / 5), relx=.0)
-			i += 1
-	else:
-		refresh.append(Button(frame, text='REFRESH LIST', width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=usb_select))
-		refresh[0].place(rely=((i + 1) / 5), relx=.0)
+	# if usb:
+		# for device in usb:
+			# select_bt.append(Button(frame, text=device, width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=stop_record))
+			# select_bt[i].place(rely=((i + 1) / 5), relx=.0)
+			# i += 1
+	# else:
+	refresh.append(Button(frame, text='REFRESH LIST', width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=usb_select))
+	refresh[0].place(rely=((i + 1) / 5), relx=.0)
 	return
 
 def start_record():
