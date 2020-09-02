@@ -54,7 +54,7 @@ def stream():
 
 
 #---------------------------Windows Version-----------------------
-# def get_usb_device():
+# def get_mount_device():
 # 	try:
 # 		usb_list = []
 # 		device = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
@@ -70,18 +70,18 @@ def stream():
 #-----------------------------------------------------------------
 
 #----------------------LINUX VERSION------------------------------
-def get_usb_device():
-	device_re = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<id>\w+:\w+)\s(?P<tag>.+)$", re.I)
-	df = subprocess.check_output("lsusb")
-	devices = []
-	for i in df.split('\n'):
-	    if i:
-	        info = device_re.match(i)
-	        if info:
-	            dinfo = info.groupdict()
-	            dinfo['device'] = '/dev/bus/usb/%s/%s' % (dinfo.pop('bus'), dinfo.pop('device'))
-	            devices.append(dinfo)
-	return devices
+def get_usb_devices():
+    sdb_devices = map(os.path.realpath, glob('/sys/block/sd*'))
+    usb_devices = (dev for dev in sdb_devices
+        if 'usb' in dev.split('/')[5])
+    return dict((os.path.basename(dev), dev) for dev in usb_devices)
+
+def get_mount_device(devices=None):
+    devices = devices or get_usb_devices() # if devices are None: get_usb_devices
+    output = check_output(['mount']).splitlines()
+    is_usb = lambda path: any(dev in path for dev in devices)
+    usb_info = (line for line in output if is_usb(line.split()[0]))
+    return [(info.split()[0], info.split()[2]) for info in usb_info]
 #-----------------------------------------------------------------
 
 
@@ -106,7 +106,7 @@ def usb_select():
 	i = 0
 	label_title.append(Label(frame, text="Select Disk", font=("arial", 25), bg=color, fg='#FFFFFF'))
 	label_title[0].place(rely=.0, relx=.1)
-	usb = get_usb_device()
+	usb = get_mount_device()
 	# if usb:
 		# for device in usb:
 			# select_bt.append(Button(frame, text=device, width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=stop_record))
