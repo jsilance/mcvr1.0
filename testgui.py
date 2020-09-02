@@ -6,13 +6,18 @@ from tkinter import filedialog
 import cv2
 import PIL.Image, PIL.ImageTk
 
-# import win32file
-# import win32api
+import win32file
+import win32api
 import re
 import subprocess
 
 import threading
 import numpy
+
+import os
+from glob import glob
+from subprocess import check_output, CalledProcessError
+from functools import partial
 
 
 # Variable Setup
@@ -54,34 +59,34 @@ def stream():
 
 
 #---------------------------Windows Version-----------------------
-# def get_mount_device():
-# 	try:
-# 		usb_list = []
-# 		device = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+def get_mount_device():
+	try:
+		usb_list = []
+		device = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
 
-# 		for usb in device:
-# 			Utype = win32file.GetDriveType(usb)
-# 			if Utype == win32file.DRIVE_REMOVABLE:
-# 				usb_list.append(usb)
-# 		return usb_list
+		for usb in device:
+			Utype = win32file.GetDriveType(usb)
+			if Utype == win32file.DRIVE_REMOVABLE:
+				usb_list.append(usb)
+		return usb_list
 
-# 	except Exception as error:
-# 		print('error', error)
+	except Exception as error:
+		print('error', error)
 #-----------------------------------------------------------------
 
 #----------------------LINUX VERSION------------------------------
-def get_usb_devices():
-    sdb_devices = map(os.path.realpath, glob('/sys/block/sd*'))
-    usb_devices = (dev for dev in sdb_devices
-        if 'usb' in dev.split('/')[5])
-    return dict((os.path.basename(dev), dev) for dev in usb_devices)
+# def get_usb_devices():
+#     sdb_devices = map(os.path.realpath, glob('/sys/block/sd*'))
+#     usb_devices = (dev for dev in sdb_devices
+#         if 'usb' in dev.split('/')[5])
+#     return dict((os.path.basename(dev), dev) for dev in usb_devices)
 
-def get_mount_device(devices=None):
-    devices = devices or get_usb_devices() # if devices are None: get_usb_devices
-    output = check_output(['mount']).splitlines()
-    is_usb = lambda path: any(dev in path for dev in devices)
-    usb_info = (line for line in output if is_usb(line.split()[0]))
-    return [(info.split()[0], info.split()[2]) for info in usb_info]
+# def get_mount_device(devices=None):
+#     devices = devices or get_usb_devices() # if devices are None: get_usb_devices
+#     output = check_output(['mount']).splitlines()
+#     is_usb = lambda path: any(dev in path for dev in devices)
+#     usb_info = (line for line in output if is_usb(line.split()[0]))
+#     return [(info.split()[0], info.split()[2]) for info in usb_info]
 #-----------------------------------------------------------------
 
 
@@ -107,14 +112,14 @@ def usb_select():
 	label_title.append(Label(frame, text="Select Disk", font=("arial", 25), bg=color, fg='#FFFFFF'))
 	label_title[0].place(rely=.0, relx=.1)
 	usb = get_mount_device()
-	# if usb:
-		# for device in usb:
-			# select_bt.append(Button(frame, text=device, width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=stop_record))
-			# select_bt[i].place(rely=((i + 1) / 5), relx=.0)
-			# i += 1
-	# else:
-	refresh.append(Button(frame, text='REFRESH LIST', width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=usb_select))
-	refresh[0].place(rely=((i + 1) / 5), relx=.0)
+	if usb:
+		for device in usb:
+			select_bt.append(Button(frame, text=device, width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=partial(stop_record, device)))
+			select_bt[i].place(rely=((i + 1) / 5), relx=.0)
+			i += 1
+	else:
+		refresh.append(Button(frame, text='REFRESH LIST', width=30, height=2, font=("arial", 10), bg='#00a0ff', fg='#ffffff', command=usb_select))
+		refresh[0].place(rely=((i + 1) / 5), relx=.0)
 	return
 
 def start_record():
@@ -133,16 +138,14 @@ def start_record():
 		btn.place(rely=.24, relx=.0)
 	return
 
-def stop_record():
+def stop_record(path_usb):
 	global i
 	global select_bt
 	global stop_bt
-	# label_title.destroy()
 
 	kill_button(4)
-	# for btn in select_bt:
-	# 	btn.destroy()
-	# 	select_bt.remove(btn)
+
+	print(path_usb)
 
 	stop_bt.append(Button(frame, text="Stop Record", width=10, height=3, font=("arial", 30), bg='#F00000', fg='#FFFFFF', command=start_record))
 	stop_bt[0].place(rely=.24, relx=.0)
