@@ -6,12 +6,12 @@ from tkinter import filedialog
 import cv2
 import PIL.Image, PIL.ImageTk
 
-import win32file
-import win32api
+# import win32file
+# import win32api
 import re
 import subprocess
 
-import threading
+import threading, time
 import numpy
 
 import os
@@ -28,8 +28,8 @@ stop_bt = []
 select_bt = []
 refresh = []
 label_title = []
-# vcap = cv2.VideoCapture('rtsp://admin:adsconcert169@192.168.0.65:554/Streaming/Channels/1/')
-vcap = cv2.VideoCapture(0)
+# vcap = cv2.VideoCapture('rtsp://admin:adsconcert169@192.168.0.65:554/Streaming/Channels/1/') # Use rtsp camera in network
+vcap = cv2.VideoCapture(0) # Use local webcam
 i = 0
 color = '#404040'
 
@@ -40,9 +40,11 @@ def stream():
 	global window
 	global vcap
 	
+	FRAME_TIME = 1 / 60
 	while(True):
     	# Capture frame-by-frame
 		ret, frame = vcap.read()
+		# frame = vcap.read()
 
 		# Our operations on the frame come here
 		dim = (240, 160)
@@ -54,39 +56,44 @@ def stream():
 
 		photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(gray))
 		canvas = tkinter.Canvas(window, width = 240, height = 160)
-		canvas.create_image(0, 0, image=photo, anchor=tkinter.NW)
+		render(photo, canvas)
+		# canvas.create_image(0, 0, image=photo, anchor=tkinter.NW)
 		canvas.grid(row=0, column=1)
+		time.sleep(FRAME_TIME)
 
+def render(photo, canvas):
+	canvas.delete(ALL)
+	canvas.create_image(0, 0, image=photo, anchor=tkinter.NW)
 
 #---------------------------Windows Version-----------------------
-def get_mount_device():
-	try:
-		usb_list = []
-		device = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+# def get_mount_device():
+# 	try:
+# 		usb_list = []
+# 		device = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
 
-		for usb in device:
-			Utype = win32file.GetDriveType(usb)
-			if Utype == win32file.DRIVE_REMOVABLE:
-				usb_list.append(usb)
-		return usb_list
+# 		for usb in device:
+# 			Utype = win32file.GetDriveType(usb)
+# 			if Utype == win32file.DRIVE_REMOVABLE:
+# 				usb_list.append(usb)
+# 		return usb_list
 
-	except Exception as error:
-		print('error', error)
+# 	except Exception as error:
+# 		print('error', error)
 #-----------------------------------------------------------------
 
 #----------------------LINUX VERSION------------------------------
-# def get_usb_devices():
-#     sdb_devices = map(os.path.realpath, glob('/sys/block/sd*'))
-#     usb_devices = (dev for dev in sdb_devices
-#         if 'usb' in dev.split('/')[5])
-#     return dict((os.path.basename(dev), dev) for dev in usb_devices)
+def get_usb_devices():
+    sdb_devices = map(os.path.realpath, glob('/sys/block/sd*'))
+    usb_devices = (dev for dev in sdb_devices
+        if 'usb' in dev.split('/')[5])
+    return dict((os.path.basename(dev), dev) for dev in usb_devices)
 
-# def get_mount_device(devices=None):
-#     devices = devices or get_usb_devices() # if devices are None: get_usb_devices
-#     output = check_output(['mount']).splitlines()
-#     is_usb = lambda path: any(dev in path for dev in devices)
-#     usb_info = (line for line in output if is_usb(line.split()[0]))
-#     return [(info.split()[0], info.split()[2]) for info in usb_info]
+def get_mount_device(devices=None):
+    devices = devices or get_usb_devices() # if devices are None: get_usb_devices
+    output = check_output(['mount']).splitlines()
+    is_usb = lambda path: any(dev in path for dev in devices)
+    usb_info = (line for line in output if is_usb(line.split()[0]))
+    return [(info.split()[0], info.split()[2]) for info in usb_info]
 #-----------------------------------------------------------------
 
 
@@ -204,16 +211,16 @@ def kill_button(nb):
 
 
 window_init()
+# stream()
 
 th2 = threading.Thread(target=stream)
-th1 = threading.Thread(target=start_record)
+# th1 = threading.Thread(target=start_record)
 
 th2.daemon = 1
-th1.start()
+# th1.start()
 th2.start()
 
 
 # start_record()
-
 
 window.mainloop()
